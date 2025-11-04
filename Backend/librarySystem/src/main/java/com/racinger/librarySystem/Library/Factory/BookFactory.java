@@ -6,6 +6,7 @@ import com.racinger.librarySystem.Library.Entity.Author;
 import com.racinger.librarySystem.Library.Entity.Book;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,10 +30,11 @@ public class BookFactory {
         }
 
         if (book.getAuthors() != null) {
-            List<AuthorDto> authorDtos = book.getAuthors().stream()
-                .map(this::createAuthorDto)
-                .collect(Collectors.toList());
-            dto.setAuthors(authorDtos);
+            dto.setAuthors(
+                book.getAuthors().stream()
+                    .map(this::createAuthorDto)
+                    .collect(Collectors.toList())
+            );
         }
 
         return dto;
@@ -47,7 +49,6 @@ public class BookFactory {
         book.setIsbn(dto.getIsbn());
         book.setTotalCopies(dto.getTotalCopies());
         book.setAvailableCopies(dto.getAvailableCopies());
-
         return book;
     }
 

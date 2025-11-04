@@ -1,5 +1,6 @@
 package com.racinger.librarySystem.Library.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;

@@ -1,5 +1,6 @@
 package com.racinger.librarySystem.Library.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,5 +34,6 @@ public class Author {
     private Integer birthYear;
 
     @ManyToMany(mappedBy = "authors", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<Book> books;
 }

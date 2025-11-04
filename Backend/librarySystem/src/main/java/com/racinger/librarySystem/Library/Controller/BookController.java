@@ -52,13 +52,32 @@ public class BookController {
     }
 
     @PostMapping
+    @Operation(
+        summary = "➕ Crear nuevo libro",
+        description = "Crea un nuevo libro en el sistema con toda su información"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "✅ Libro creado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "❌ Datos inválidos"),
+        @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
+    })
     public ResponseEntity<Book> createBook(@RequestBody Book book) {
         Book savedBook = bookService.save(book);
         return ResponseEntity.ok(savedBook);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Book> updateBook(@PathVariable Long id, @RequestBody Book book) {
+    @Operation(
+        summary = "✏️ Actualizar libro",
+        description = "Actualiza la información de un libro existente"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "✅ Libro actualizado exitosamente"),
+        @ApiResponse(responseCode = "404", description = "❌ Libro no encontrado"),
+        @ApiResponse(responseCode = "400", description = "❌ Datos inválidos"),
+        @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
+    })
+    public ResponseEntity<Book> updateBook(@Parameter(description = "ID del libro a actualizar", example = "1") @PathVariable Long id, @RequestBody Book book) {
         if (!bookService.findById(id).isPresent()) {
             return ResponseEntity.notFound().build();
         }
@@ -68,7 +87,16 @@ public class BookController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteBook(@PathVariable Long id) {
+    @Operation(
+        summary = "🗑️ Eliminar libro",
+        description = "Elimina un libro del sistema por su ID"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "204", description = "✅ Libro eliminado exitosamente"),
+        @ApiResponse(responseCode = "404", description = "❌ Libro no encontrado"),
+        @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
+    })
+    public ResponseEntity<Void> deleteBook(@Parameter(description = "ID del libro a eliminar", example = "1") @PathVariable Long id) {
         if (!bookService.findById(id).isPresent()) {
             return ResponseEntity.notFound().build();
         }
@@ -77,25 +105,57 @@ public class BookController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Book>> searchBooks(@RequestParam String keyword) {
+    @Operation(
+        summary = "🔍 Buscar libros",
+        description = "Busca libros por título, autor o ISBN"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "✅ Búsqueda realizada exitosamente"),
+        @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
+    })
+    public ResponseEntity<List<Book>> searchBooks(@Parameter(description = "Palabra clave para buscar (título, autor o ISBN)", example = "Harry Potter") @RequestParam String keyword) {
         List<Book> books = bookService.searchBooks(keyword);
         return ResponseEntity.ok(books);
     }
 
     @GetMapping("/available")
+    @Operation(
+        summary = "✅ Obtener libros disponibles",
+        description = "Retorna una lista de libros que están disponibles para préstamo"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "✅ Lista de libros disponibles obtenida exitosamente"),
+        @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
+    })
     public ResponseEntity<List<Book>> getAvailableBooks() {
         List<Book> books = bookService.findAvailableBooks();
         return ResponseEntity.ok(books);
     }
 
     @GetMapping("/category/{categoryId}")
-    public ResponseEntity<List<Book>> getBooksByCategory(@PathVariable Long categoryId) {
+    @Operation(
+        summary = "📂 Obtener libros por categoría",
+        description = "Retorna todos los libros de una categoría específica"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "✅ Lista de libros obtenida exitosamente"),
+        @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
+    })
+    public ResponseEntity<List<Book>> getBooksByCategory(@Parameter(description = "ID de la categoría", example = "1") @PathVariable Long categoryId) {
         List<Book> books = bookService.findBooksByCategory(categoryId);
         return ResponseEntity.ok(books);
     }
 
     @GetMapping("/author/{authorId}")
-    public ResponseEntity<List<Book>> getBooksByAuthor(@PathVariable Long authorId) {
+    @Operation(
+        summary = "✍️ Obtener libros por autor",
+        description = "Retorna todos los libros de un autor específico"
+    )
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "✅ Lista de libros obtenida exitosamente"),
+        @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
+    })
+    public ResponseEntity<List<Book>> getBooksByAuthor(@Parameter(description = "ID del autor", example = "1") @PathVariable Long authorId) {
         List<Book> books = bookService.findBooksByAuthor(authorId);
         return ResponseEntity.ok(books);
     }
