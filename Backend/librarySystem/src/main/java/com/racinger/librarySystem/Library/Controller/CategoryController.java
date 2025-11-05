@@ -96,6 +96,7 @@ public class CategoryController {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "✅ Categoría eliminada exitosamente"),
+        @ApiResponse(responseCode = "400", description = "❌ No se puede eliminar categoría con libros asociados"),
         @ApiResponse(responseCode = "404", description = "❌ Categoría no encontrada"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
@@ -103,8 +104,12 @@ public class CategoryController {
         if (!categoryService.findById(id).isPresent()) {
             return ResponseEntity.notFound().build();
         }
-        categoryService.deleteById(id);
-        return ResponseEntity.noContent().build();
+        try {
+            categoryService.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/search")

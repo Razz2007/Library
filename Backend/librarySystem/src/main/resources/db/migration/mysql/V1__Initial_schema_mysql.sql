@@ -1,9 +1,5 @@
--- Initial schema for Library System
+-- Initial schema for Library System - MySQL Version
 -- Version: 1.0.0
-
--- Create database
-CREATE DATABASE IF NOT EXISTS library_db;
-USE library_db;
 
 -- Categories table
 CREATE TABLE categories (
@@ -40,8 +36,8 @@ CREATE TABLE book_authors (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     book_id BIGINT NOT NULL,
     author_id BIGINT NOT NULL,
-    FOREIGN KEY (book_id) REFERENCES books(id),
-    FOREIGN KEY (author_id) REFERENCES authors(id),
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE,
     CONSTRAINT unique_book_author UNIQUE (book_id, author_id)
 );
 
@@ -53,7 +49,7 @@ CREATE TABLE students (
     email VARCHAR(100) NOT NULL UNIQUE,
     phone VARCHAR(20),
     registration_date DATE NOT NULL,
-    is_active BIT NOT NULL DEFAULT 1
+    is_active TINYINT(1) NOT NULL DEFAULT 1
 );
 
 -- Loans table
@@ -64,9 +60,10 @@ CREATE TABLE loans (
     loan_date DATE NOT NULL,
     due_date DATE NOT NULL,
     return_date DATE,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'RETURNED', 'OVERDUE')),
-    FOREIGN KEY (student_id) REFERENCES students(id),
-    FOREIGN KEY (book_id) REFERENCES books(id)
+    status VARCHAR(20) NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+    CONSTRAINT chk_loans_status CHECK (status IN ('ACTIVE', 'RETURNED', 'OVERDUE'))
 );
 
 -- Returns table
@@ -77,7 +74,7 @@ CREATE TABLE returns (
     days_late INT,
     penalty_amount DECIMAL(10,2),
     notes TEXT,
-    FOREIGN KEY (loan_id) REFERENCES loans(id)
+    FOREIGN KEY (loan_id) REFERENCES loans(id) ON DELETE CASCADE
 );
 
 -- Penalties table
@@ -88,8 +85,9 @@ CREATE TABLE penalties (
     reason VARCHAR(255) NOT NULL,
     issued_date DATE NOT NULL,
     paid_date DATE,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('PENDING', 'PAID', 'CANCELLED')),
-    FOREIGN KEY (student_id) REFERENCES students(id)
+    status VARCHAR(20) NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    CONSTRAINT chk_penalties_status CHECK (status IN ('PENDING', 'PAID', 'CANCELLED'))
 );
 
 -- Reservations table
@@ -99,9 +97,10 @@ CREATE TABLE reservations (
     book_id BIGINT NOT NULL,
     reservation_date DATE NOT NULL,
     expiration_date DATE NOT NULL,
-    status VARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'CANCELLED', 'EXPIRED', 'FULFILLED')),
-    FOREIGN KEY (student_id) REFERENCES students(id),
-    FOREIGN KEY (book_id) REFERENCES books(id)
+    status VARCHAR(20) NOT NULL,
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+    CONSTRAINT chk_reservations_status CHECK (status IN ('ACTIVE', 'CANCELLED', 'EXPIRED', 'FULFILLED'))
 );
 
 -- Student-Book relationship table (for tracking loan history)
@@ -110,8 +109,8 @@ CREATE TABLE student_books (
     student_id BIGINT NOT NULL,
     book_id BIGINT NOT NULL,
     loan_count INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (student_id) REFERENCES students(id),
-    FOREIGN KEY (book_id) REFERENCES books(id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
     CONSTRAINT unique_student_book UNIQUE (student_id, book_id)
 );
 

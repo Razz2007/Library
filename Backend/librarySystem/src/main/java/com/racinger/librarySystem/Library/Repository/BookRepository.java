@@ -3,6 +3,7 @@ package com.racinger.librarySystem.Library.Repository;
 import com.racinger.librarySystem.Library.Entity.Book;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
@@ -34,4 +35,12 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     // 🔹 Libros por autor
     @Query("SELECT DISTINCT b FROM Book b JOIN b.authors a WHERE a.id = :authorId")
     List<Book> findByAuthorsId(Long authorId);
+
+    // 🔹 Verificar si un libro tiene préstamos activos
+    @Query("SELECT COUNT(l) > 0 FROM Loan l WHERE l.book.id = :bookId AND l.status = 'ACTIVE'")
+    boolean hasActiveLoans(@Param("bookId") Long bookId);
+
+    // 🔹 Verificar si un libro tiene reservaciones activas
+    @Query("SELECT COUNT(r) > 0 FROM Reservation r WHERE r.book.id = :bookId AND r.status IN ('ACTIVE', 'FULFILLED')")
+    boolean hasActiveReservations(@Param("bookId") Long bookId);
 }

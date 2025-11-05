@@ -140,6 +140,7 @@ public class BookController {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "✅ Libro eliminado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "❌ No se puede eliminar libro con préstamos o reservaciones activas"),
         @ApiResponse(responseCode = "404", description = "❌ Libro no encontrado"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
@@ -153,6 +154,9 @@ public class BookController {
             bookService.deleteById(id);
             log.info("Libro eliminado exitosamente, ID: {}", id);
             return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            log.warn("No se puede eliminar libro con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             log.error("Error al eliminar libro con ID: {}", id, e);
             return ResponseEntity.internalServerError().build();

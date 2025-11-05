@@ -81,9 +81,13 @@ public class AuthorController {
         if (!authorService.findById(id).isPresent()) {
             return ResponseEntity.notFound().build();
         }
-        author.setId(id);
-        Author updatedAuthor = authorService.save(author);
-        return ResponseEntity.ok(updatedAuthor);
+        try {
+            author.setId(id);
+            Author updatedAuthor = authorService.save(author);
+            return ResponseEntity.ok(updatedAuthor);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -93,6 +97,7 @@ public class AuthorController {
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "204", description = "✅ Autor eliminado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "❌ No se puede eliminar autor con libros asociados"),
         @ApiResponse(responseCode = "404", description = "❌ Autor no encontrado"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
@@ -100,8 +105,12 @@ public class AuthorController {
         if (!authorService.findById(id).isPresent()) {
             return ResponseEntity.notFound().build();
         }
-        authorService.deleteById(id);
-        return ResponseEntity.noContent().build();
+        try {
+            authorService.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @GetMapping("/search")

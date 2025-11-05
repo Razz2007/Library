@@ -20,6 +20,7 @@ public class Penalty {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
+    @JsonIgnore
     private Student student;
 
     @Column(nullable = false, columnDefinition = "DECIMAL(10,2)")

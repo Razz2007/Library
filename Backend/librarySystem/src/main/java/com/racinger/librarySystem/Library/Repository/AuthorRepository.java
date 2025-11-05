@@ -20,4 +20,7 @@ public interface AuthorRepository extends JpaRepository<Author, Long> {
 
     @Query("SELECT COUNT(a) FROM Author a")
     Long countTotalAuthors();
+
+    @Query("SELECT COUNT(ba) > 0 FROM BookAuthor ba WHERE ba.author.id = :authorId")
+    boolean hasAssociatedBooks(@Param("authorId") Long authorId);
 }

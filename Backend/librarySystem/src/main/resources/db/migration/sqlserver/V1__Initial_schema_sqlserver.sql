@@ -1,21 +1,11 @@
--- Schema for SQL Server database
--- Library System Database Schema
-
--- Create database
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = 'library_db')
-BEGIN
-    CREATE DATABASE library_db;
-END
-GO
-
-USE library_db;
-GO
+-- Initial schema for Library System - SQL Server Version
+-- Version: 1.0.0
 
 -- Categories table
 CREATE TABLE categories (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     name NVARCHAR(100) NOT NULL UNIQUE,
-    description NTEXT
+    description NVARCHAR(MAX)
 );
 
 -- Authors table
@@ -23,7 +13,7 @@ CREATE TABLE authors (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     first_name NVARCHAR(100) NOT NULL,
     last_name NVARCHAR(100) NOT NULL,
-    biography NTEXT,
+    biography NVARCHAR(MAX),
     nationality NVARCHAR(100),
     birth_year INT
 );
@@ -32,7 +22,7 @@ CREATE TABLE authors (
 CREATE TABLE books (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     title NVARCHAR(255) NOT NULL,
-    description NTEXT,
+    description NVARCHAR(MAX),
     publication_year INT NOT NULL,
     isbn NVARCHAR(50) NOT NULL,
     total_copies INT NOT NULL,
@@ -46,8 +36,8 @@ CREATE TABLE book_authors (
     id BIGINT IDENTITY(1,1) PRIMARY KEY,
     book_id BIGINT NOT NULL,
     author_id BIGINT NOT NULL,
-    FOREIGN KEY (book_id) REFERENCES books(id),
-    FOREIGN KEY (author_id) REFERENCES authors(id),
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
+    FOREIGN KEY (author_id) REFERENCES authors(id) ON DELETE CASCADE,
     CONSTRAINT unique_book_author UNIQUE (book_id, author_id)
 );
 
@@ -71,8 +61,8 @@ CREATE TABLE loans (
     due_date DATE NOT NULL,
     return_date DATE,
     status NVARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'RETURNED', 'OVERDUE')),
-    FOREIGN KEY (student_id) REFERENCES students(id),
-    FOREIGN KEY (book_id) REFERENCES books(id)
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
 );
 
 -- Returns table
@@ -82,8 +72,8 @@ CREATE TABLE returns (
     return_date DATE NOT NULL,
     days_late INT,
     penalty_amount DECIMAL(10,2),
-    notes NTEXT,
-    FOREIGN KEY (loan_id) REFERENCES loans(id)
+    notes NVARCHAR(MAX),
+    FOREIGN KEY (loan_id) REFERENCES loans(id) ON DELETE CASCADE
 );
 
 -- Penalties table
@@ -95,7 +85,7 @@ CREATE TABLE penalties (
     issued_date DATE NOT NULL,
     paid_date DATE,
     status NVARCHAR(20) NOT NULL CHECK (status IN ('PENDING', 'PAID', 'CANCELLED')),
-    FOREIGN KEY (student_id) REFERENCES students(id)
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
 );
 
 -- Reservations table
@@ -106,8 +96,8 @@ CREATE TABLE reservations (
     reservation_date DATE NOT NULL,
     expiration_date DATE NOT NULL,
     status NVARCHAR(20) NOT NULL CHECK (status IN ('ACTIVE', 'CANCELLED', 'EXPIRED', 'FULFILLED')),
-    FOREIGN KEY (student_id) REFERENCES students(id),
-    FOREIGN KEY (book_id) REFERENCES books(id)
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
 );
 
 -- Student-Book relationship table (for tracking loan history)
@@ -116,8 +106,8 @@ CREATE TABLE student_books (
     student_id BIGINT NOT NULL,
     book_id BIGINT NOT NULL,
     loan_count INT NOT NULL DEFAULT 0,
-    FOREIGN KEY (student_id) REFERENCES students(id),
-    FOREIGN KEY (book_id) REFERENCES books(id),
+    FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
     CONSTRAINT unique_student_book UNIQUE (student_id, book_id)
 );
 

@@ -35,6 +35,10 @@ public class CategoryService implements ICategoryService {
 
     @Override
     public void deleteById(Long id) {
+        // Check if category has associated books
+        if (categoryRepository.hasAssociatedBooks(id)) {
+            throw new IllegalStateException("Cannot delete category with associated books. Remove books from this category first.");
+        }
         categoryRepository.deleteById(id);
     }
 

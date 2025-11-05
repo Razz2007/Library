@@ -65,6 +65,19 @@ public class BookService implements IBookService {
     @Override
     public void deleteById(Long id) {
         log.debug("Eliminando libro con ID: {}", id);
+
+        // Verificar si el libro tiene préstamos activos
+        if (bookRepository.hasActiveLoans(id)) {
+            log.warn("Intento de eliminar libro con préstamos activos, ID: {}", id);
+            throw new IllegalStateException("Cannot delete book with active loans. Return all loaned copies first.");
+        }
+
+        // Verificar si el libro tiene reservaciones activas
+        if (bookRepository.hasActiveReservations(id)) {
+            log.warn("Intento de eliminar libro con reservaciones activas, ID: {}", id);
+            throw new IllegalStateException("Cannot delete book with active reservations. Cancel reservations first.");
+        }
+
         try {
             if (bookRepository.existsById(id)) {
                 bookRepository.deleteById(id);

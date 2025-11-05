@@ -20,6 +20,7 @@ public class Return {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "loan_id", nullable = false)
+    @JsonIgnore
     private Loan loan;
 
     @Column(nullable = false)

@@ -35,6 +35,10 @@ public class AuthorService implements IAuthorService {
 
     @Override
     public void deleteById(Long id) {
+        // Check if author has associated books
+        if (authorRepository.hasAssociatedBooks(id)) {
+            throw new IllegalStateException("Cannot delete author with associated books. Remove book associations first.");
+        }
         authorRepository.deleteById(id);
     }
 
