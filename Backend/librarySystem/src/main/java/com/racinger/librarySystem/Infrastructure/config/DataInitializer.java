@@ -12,8 +12,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -68,7 +68,7 @@ public class DataInitializer implements CommandLineRunner {
             createCategory("Arte", "Libros de arte y diseño")
         };
 
-        categoryRepository.saveAll(Arrays.asList(categories));
+        categoryRepository.saveAll(List.of(categories));
         categoryRepository.flush();
         log.info("📂 {} categorías creadas exitosamente", categories.length);
     }
@@ -94,7 +94,7 @@ public class DataInitializer implements CommandLineRunner {
             createAuthor("José", "Saramago", "Premio Nobel de Literatura 1998", "Portuguesa", 1922)
         };
 
-        authorRepository.saveAll(Arrays.asList(authors));
+        authorRepository.saveAll(List.of(authors));
         authorRepository.flush();
         log.info("✍️ {} autores creados exitosamente", authors.length);
     }
@@ -143,7 +143,7 @@ public class DataInitializer implements CommandLineRunner {
             createBook("Confieso que he vivido", "Memorias del poeta chileno", 1974, "978-84-206-8191-9", 6, 4, ficcion, new Author[]{neruda})
         };
 
-        bookRepository.saveAll(Arrays.asList(books));
+        bookRepository.saveAll(List.of(books));
         log.info("📚 {} libros creados exitosamente", books.length);
     }
 
@@ -174,7 +174,7 @@ public class DataInitializer implements CommandLineRunner {
         book.setTotalCopies(totalCopies);
         book.setAvailableCopies(availableCopies);
         book.setCategory(category);
-        book.setAuthors(new HashSet<>(Arrays.asList(authors)));
+        book.setAuthors(new HashSet<>(List.of(authors)));
         return book;
     }
 }
