@@ -1,25 +1,39 @@
 package com.racinger.librarySystem.Library.Controller;
 
+import com.racinger.librarySystem.Library.DTO.BookDto;
 import com.racinger.librarySystem.Library.Entity.Book;
+import com.racinger.librarySystem.Library.Factory.BookFactory;
 import com.racinger.librarySystem.Library.Service.interfaces.IBookService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/books")
-@RequiredArgsConstructor
+@Validated
 @Tag(name = "📚 Books", description = "Gestión completa de libros, autores y categorías")
 public class BookController {
 
     private final IBookService bookService;
+    private final BookFactory bookFactory;
+    private static final Logger log = LoggerFactory.getLogger(BookController.class);
+
+    // Constructor
+    public BookController(IBookService bookService, BookFactory bookFactory) {
+        this.bookService = bookService;
+        this.bookFactory = bookFactory;
+    }
 
     @GetMapping
     @Operation(
@@ -30,9 +44,14 @@ public class BookController {
         @ApiResponse(responseCode = "200", description = "✅ Lista de libros obtenida exitosamente"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
-    public ResponseEntity<List<Book>> getAllBooks() {
+    public ResponseEntity<List<BookDto>> getAllBooks() {
+        log.debug("Solicitud para obtener todos los libros");
         List<Book> books = bookService.findAll();
-        return ResponseEntity.ok(books);
+        List<BookDto> bookDtos = books.stream()
+            .map(bookFactory::createBookDto)
+            .collect(Collectors.toList());
+        log.info("Retornando {} libros", bookDtos.size());
+        return ResponseEntity.ok(bookDtos);
     }
 
     @GetMapping("/{id}")
@@ -45,10 +64,17 @@ public class BookController {
         @ApiResponse(responseCode = "404", description = "❌ Libro no encontrado con el ID especificado"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
-    public ResponseEntity<Book> getBookById(@Parameter(description = "ID único del libro a buscar", example = "1") @PathVariable Long id) {
+    public ResponseEntity<BookDto> getBookById(@Parameter(description = "ID único del libro a buscar", example = "1") @PathVariable Long id) {
+        log.debug("Solicitud para obtener libro con ID: {}", id);
         Optional<Book> book = bookService.findById(id);
-        return book.map(ResponseEntity::ok)
-                   .orElse(ResponseEntity.notFound().build());
+        if (book.isPresent()) {
+            BookDto bookDto = bookFactory.createBookDto(book.get());
+            log.info("Libro encontrado: {}", book.get().getTitle());
+            return ResponseEntity.ok(bookDto);
+        } else {
+            log.warn("Libro no encontrado con ID: {}", id);
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
@@ -61,9 +87,20 @@ public class BookController {
         @ApiResponse(responseCode = "400", description = "❌ Datos inválidos"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
-    public ResponseEntity<Book> createBook(@RequestBody Book book) {
-        Book savedBook = bookService.save(book);
-        return ResponseEntity.ok(savedBook);
+    public ResponseEntity<BookDto> createBook(@Valid @RequestBody BookDto bookDto) {
+        log.debug("Solicitud para crear nuevo libro: {}", bookDto.getTitle());
+        try {
+            // Aquí necesitaríamos lógica adicional para convertir DTO a entidad completa
+            // Por simplicidad, asumimos que el DTO tiene toda la info necesaria
+            Book book = bookFactory.createBookEntity(bookDto);
+            Book savedBook = bookService.save(book);
+            BookDto responseDto = bookFactory.createBookDto(savedBook);
+            log.info("Libro creado exitosamente: {}", savedBook.getTitle());
+            return ResponseEntity.ok(responseDto);
+        } catch (Exception e) {
+            log.error("Error al crear libro: {}", bookDto.getTitle(), e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/{id}")
@@ -77,13 +114,23 @@ public class BookController {
         @ApiResponse(responseCode = "400", description = "❌ Datos inválidos"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
-    public ResponseEntity<Book> updateBook(@Parameter(description = "ID del libro a actualizar", example = "1") @PathVariable Long id, @RequestBody Book book) {
+    public ResponseEntity<BookDto> updateBook(@Parameter(description = "ID del libro a actualizar", example = "1") @PathVariable Long id, @Valid @RequestBody BookDto bookDto) {
+        log.debug("Solicitud para actualizar libro con ID: {}", id);
         if (!bookService.findById(id).isPresent()) {
+            log.warn("Libro no encontrado para actualización, ID: {}", id);
             return ResponseEntity.notFound().build();
         }
-        book.setId(id);
-        Book updatedBook = bookService.save(book);
-        return ResponseEntity.ok(updatedBook);
+        try {
+            Book book = bookFactory.createBookEntity(bookDto);
+            book.setId(id);
+            Book updatedBook = bookService.save(book);
+            BookDto responseDto = bookFactory.createBookDto(updatedBook);
+            log.info("Libro actualizado exitosamente: {}", updatedBook.getTitle());
+            return ResponseEntity.ok(responseDto);
+        } catch (Exception e) {
+            log.error("Error al actualizar libro con ID: {}", id, e);
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @DeleteMapping("/{id}")
@@ -97,11 +144,19 @@ public class BookController {
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
     public ResponseEntity<Void> deleteBook(@Parameter(description = "ID del libro a eliminar", example = "1") @PathVariable Long id) {
+        log.debug("Solicitud para eliminar libro con ID: {}", id);
         if (!bookService.findById(id).isPresent()) {
+            log.warn("Libro no encontrado para eliminación, ID: {}", id);
             return ResponseEntity.notFound().build();
         }
-        bookService.deleteById(id);
-        return ResponseEntity.noContent().build();
+        try {
+            bookService.deleteById(id);
+            log.info("Libro eliminado exitosamente, ID: {}", id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.error("Error al eliminar libro con ID: {}", id, e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     @GetMapping("/search")
@@ -113,9 +168,14 @@ public class BookController {
         @ApiResponse(responseCode = "200", description = "✅ Búsqueda realizada exitosamente"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
-    public ResponseEntity<List<Book>> searchBooks(@Parameter(description = "Palabra clave para buscar (título, autor o ISBN)", example = "Harry Potter") @RequestParam String keyword) {
+    public ResponseEntity<List<BookDto>> searchBooks(@Parameter(description = "Palabra clave para buscar (título, autor o ISBN)", example = "Harry Potter") @RequestParam String keyword) {
+        log.debug("Solicitud de búsqueda de libros con palabra clave: {}", keyword);
         List<Book> books = bookService.searchBooks(keyword);
-        return ResponseEntity.ok(books);
+        List<BookDto> bookDtos = books.stream()
+            .map(bookFactory::createBookDto)
+            .collect(Collectors.toList());
+        log.info("Búsqueda completada, encontrados {} libros", bookDtos.size());
+        return ResponseEntity.ok(bookDtos);
     }
 
     @GetMapping("/available")
@@ -127,9 +187,14 @@ public class BookController {
         @ApiResponse(responseCode = "200", description = "✅ Lista de libros disponibles obtenida exitosamente"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
-    public ResponseEntity<List<Book>> getAvailableBooks() {
+    public ResponseEntity<List<BookDto>> getAvailableBooks() {
+        log.debug("Solicitud para obtener libros disponibles");
         List<Book> books = bookService.findAvailableBooks();
-        return ResponseEntity.ok(books);
+        List<BookDto> bookDtos = books.stream()
+            .map(bookFactory::createBookDto)
+            .collect(Collectors.toList());
+        log.info("Encontrados {} libros disponibles", bookDtos.size());
+        return ResponseEntity.ok(bookDtos);
     }
 
     @GetMapping("/category/{categoryId}")
@@ -141,9 +206,14 @@ public class BookController {
         @ApiResponse(responseCode = "200", description = "✅ Lista de libros obtenida exitosamente"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
-    public ResponseEntity<List<Book>> getBooksByCategory(@Parameter(description = "ID de la categoría", example = "1") @PathVariable Long categoryId) {
+    public ResponseEntity<List<BookDto>> getBooksByCategory(@Parameter(description = "ID de la categoría", example = "1") @PathVariable Long categoryId) {
+        log.debug("Solicitud para obtener libros por categoría ID: {}", categoryId);
         List<Book> books = bookService.findBooksByCategory(categoryId);
-        return ResponseEntity.ok(books);
+        List<BookDto> bookDtos = books.stream()
+            .map(bookFactory::createBookDto)
+            .collect(Collectors.toList());
+        log.info("Encontrados {} libros para la categoría {}", bookDtos.size(), categoryId);
+        return ResponseEntity.ok(bookDtos);
     }
 
     @GetMapping("/author/{authorId}")
@@ -155,8 +225,13 @@ public class BookController {
         @ApiResponse(responseCode = "200", description = "✅ Lista de libros obtenida exitosamente"),
         @ApiResponse(responseCode = "500", description = "❌ Error interno del servidor")
     })
-    public ResponseEntity<List<Book>> getBooksByAuthor(@Parameter(description = "ID del autor", example = "1") @PathVariable Long authorId) {
+    public ResponseEntity<List<BookDto>> getBooksByAuthor(@Parameter(description = "ID del autor", example = "1") @PathVariable Long authorId) {
+        log.debug("Solicitud para obtener libros por autor ID: {}", authorId);
         List<Book> books = bookService.findBooksByAuthor(authorId);
-        return ResponseEntity.ok(books);
+        List<BookDto> bookDtos = books.stream()
+            .map(bookFactory::createBookDto)
+            .collect(Collectors.toList());
+        log.info("Encontrados {} libros para el autor {}", bookDtos.size(), authorId);
+        return ResponseEntity.ok(bookDtos);
     }
 }
